@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Stock</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .low-stock {
+            background-color: #ffcccc; /* Surlignage en rouge */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">Gestion de Stock</h2>
+        <form id="stockForm">
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="productName">Nom du Produit</label>
+                    <input type="text" class="form-control" id="productName" placeholder="Nom du Produit" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="quantity">Quantité</label>
+                    <input type="number" class="form-control" id="quantity" placeholder="Quantité" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="addButton">&nbsp;</label>
+                    <button type="button" class="btn btn-success form-control" id="addButton">Ajouter</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="form-group">
+            <label for="search">Rechercher un Produit</label>
+            <input type="text" class="form-control" id="search" placeholder="Entrez le nom du produit">
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-striped mt-4">
+                <thead>
+                    <tr>
+                        <th>Nom du Produit</th>
+                        <th>Quantité</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="stockTableBody">
+                    <!-- Les données du stock seront affichées ici -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.min.js"></script>
+    <script>
+        // Chargement des données du stock depuis le stockage local
+        window.onload = function() {
+            loadStockData();
+        };
+
+        // Code JavaScript pour ajouter et afficher les produits dans le tableau
+        document.getElementById('addButton').addEventListener('click', function() {
+            var productName = document.getElementById('productName').value;
+            var quantity = document.getElementById('quantity').value;
+
+            if (productName && quantity) {
+                // Ajouter la nouvelle ligne au tableau avec une vérification de la quantité
+                var tableBody = document.getElementById('stockTableBody');
+                var newRow = tableBody.insertRow(tableBody.rows.length);
+                newRow.insertCell(0).innerHTML = productName;
+                newRow.insertCell(1).innerHTML = quantity;
+                newRow.insertCell(2).innerHTML = '<button class="btn btn-info btn-sm" onclick="editRow(this)">Modifier</button>' +
+                                                 '<button class="btn btn-danger btn-sm ml-2" onclick="deleteRow(this)">Supprimer</button>';
+                
+                // Appliquer le surlignage en rouge si la quantité est inférieure ou égale à 3
+                if (parseInt(quantity) <= 3) {
+                    newRow.classList.add('low-stock');
+                }
+
+                // Enregistrer les données du stock dans le stockage local
+                saveStockData();
+
+                // Effacer les champs du formulaire
+                document.getElementById('productName').value = '';
+                document.getElementById('quantity').value = '';
+            }
+        });
+
+        // Fonction pour supprimer une ligne du tableau
+        function deleteRow(btn) {
+            var row = btn.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+
+            // Enregistrer les données du stock dans le stockage local
+            saveStockData();
+        }
+
+        // Fonction pour modifier la quantité d'un produit
+        function editRow(btn) {
+            var row = btn.parentNode.parentNode;
+            var productName = row.cells[0].innerHTML;
+            var newQuantity = prompt("Entrez la nouvelle quantité pour '" + productName + "':", row.cells[1].innerHTML);
+
+            if (newQuantity !== null) {
+                row.cells[1].innerHTML = newQuantity;
+
+                // Appliquer le surlignage en rouge si la nouvelle quantité est inférieure ou égale à 3
+                if (parseInt(newQuantity) <= 3) {
+                    row.classList.add('low-stock');
+                } else {
+                    row.classList.remove('low-stock');
+                }
+
+                // Enregistrer les données du stock dans le stockage local
+                saveStockData();
+            }
+        }
+
+        // Fonction pour enregistrer les données du stock dans le stockage local
+        function saveStockData() {
+            var stockData = [];
+            var tableRows = document.getElementById('stockTableBody').rows;
+
+            for (var i = 0; i < tableRows.length; i++) {
+                var productName = tableRows[i].cells[0].innerHTML;
+                var quantity = tableRows[i].cells[1].innerHTML;
+
+                stockData.push({
+                    productName: productName,
+                    quantity: quantity
+                });
+            }
+
+            localStorage.setItem('stockData', JSON.stringify(stockData));
+        }
+
+        // Fonction pour charger les données du stock depuis le stockage local
+        function loadStockData() {
+            var stockData = JSON.parse(localStorage.getItem('stockData')) || [];
+            var tableBody = document.getElementById('stockTableBody');
+
+            for (var i = 0; i < stockData.length; i++) {
+                var newRow = tableBody.insertRow(tableBody.rows.length);
+                newRow.insertCell(0).innerHTML = stockData[i].productName;
+                newRow.insertCell(1).innerHTML = stockData[i].quantity;
+                newRow.insertCell(2).innerHTML = '<button class="btn btn-info btn-sm" onclick="editRow(this)">Modifier</button>' +
+                                                 '<button class="btn btn-danger btn-sm ml-2" onclick="deleteRow(this)">Supprimer</button>';
+                
+                // Appliquer le surlignage en rouge si la quantité est inférieure ou égale à 3
+                if (parseInt(stockData[i].quantity) <= 3) {
+                    newRow.classList.add('low-stock');
+                }
+            }
+        }
+
+        // Fonction pour filtrer les produits en fonction de la recherche
+        document.getElementById('search').addEventListener('input', function() {
+            var searchTerm = this.value.toLowerCase();
+            var tableRows = document.getElementById('stockTableBody').rows;
+
+            for (var i = 0; i < tableRows.length; i++) {
+                var productName = tableRows[i].cells[0].innerHTML.toLowerCase();
+
+                if (productName.includes(searchTerm)) {
+                    tableRows[i].style.display = '';
+                } else {
+                    tableRows[i].style.display = 'none';
+                }
+            }
+        });
+    </script>
+    
+</body>
+</html>
